@@ -1,9 +1,10 @@
 import sqlite3
+from datetime import datetime
 
 from flask import Flask, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from database.db import get_db, init_db, seed_db
+from database.db import CATEGORIES, get_db, init_db, seed_db
 
 app = Flask(__name__)
 app.secret_key = "dev-secret-key-change-in-production"
@@ -11,6 +12,27 @@ app.secret_key = "dev-secret-key-change-in-production"
 with app.app_context():
     init_db()
     seed_db()
+
+
+# ------------------------------------------------------------------ #
+# Helpers                                                             #
+# ------------------------------------------------------------------ #
+
+def format_member_since(created_at):
+    try:
+        dt = datetime.strptime(created_at, "%Y-%m-%d %H:%M:%S")
+    except (TypeError, ValueError):
+        return created_at or "—"
+    return dt.strftime("%B %Y")
+
+
+def get_initials(name):
+    parts = name.split()
+    if not parts:
+        return "?"
+    if len(parts) == 1:
+        return parts[0][:2].upper()
+    return (parts[0][0] + parts[-1][0]).upper()
 
 
 # ------------------------------------------------------------------ #
@@ -117,6 +139,147 @@ def logout():
     return redirect(url_for("landing"))
 
 
+@app.route("/profile")
+def profile():
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("login"))
+
+    conn = get_db()
+    user_row = conn.execute(
+        "SELECT id, name, email, created_at FROM users WHERE id = ?", (user_id,)
+    ).fetchone()
+
+    if not user_row:
+        conn.close()
+        session.clear()
+        return redirect(url_for("login"))
+
+    totals = conn.execute(
+        "SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS count FROM expenses WHERE user_id = ?",
+        (user_id,),
+    ).fetchone()
+    total_spent = totals["total"]
+    transaction_count = totals["count"]
+
+    category_totals = conn.execute(
+        """
+        SELECT category, SUM(amount) AS total
+        FROM expenses
+        WHERE user_id = ?
+        GROUP BY category
+        ORDER BY total DESC
+        """,
+        (user_id,),
+    ).fetchall()
+
+    recent = conn.execute(
+        """
+        SELECT date, description, category, amount
+        FROM expenses
+        WHERE user_id = ?
+        ORDER BY date DESC, id DESC
+        LIMIT 5
+        """,
+        (user_id,),
+    ).fetchall()
+    conn.close()
+
+    user = {
+        "initials": get_initials(user_row["name"]),
+        "name": user_row["name"],
+        "email": user_row["email"],
+        "member_since": format_member_since(user_row["created_at"]),
+    }
+
+    stats = {
+        "total_spent": total_spent,
+        "transaction_count": transaction_count,
+        "top_category": category_totals[0]["category"] if category_totals else "—",
+    }
+
+    categories = [
+        {
+            "name": row["category"],
+            "total": row["total"],
+            "percent": round((row["total"] / total_spent) * 100, 1) if total_spent else 0,
+        }
+        for row in category_totals
+    ]
+
+    transactions = [
+        {
+            "date": row["date"],
+            "description": row["description"] or "—",
+            "category": row["category"],
+            "amount": row["amount"],
+        }
+        for row in recent
+    ]
+
+    return render_template(
+        "profile.html",
+        user=user,
+        stats=stats,
+        categories=categories,
+        transactions=transactions,
+    )
+
+
+@app.route("/expenses/add", methods=["GET", "POST"])
+def add_expense():
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("login"))
+
+    if request.method == "GET":
+        return render_template("add_expense.html", categories=CATEGORIES)
+
+    amount = request.form.get("amount", "").strip()
+    category = request.form.get("category", "").strip()
+    date = request.form.get("date", "").strip()
+    description = request.form.get("description", "").strip()
+
+    error = None
+    amount_value = None
+    try:
+        amount_value = float(amount)
+        if amount_value <= 0:
+            raise ValueError
+    except ValueError:
+        error = "Enter a valid amount greater than zero."
+
+    if not error and category not in CATEGORIES:
+        error = "Select a valid category."
+
+    if not error:
+        try:
+            datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            error = "Enter a valid date."
+
+    if error:
+        return render_template(
+            "add_expense.html",
+            categories=CATEGORIES,
+            error=error,
+            amount=amount,
+            category=category,
+            date=date,
+            description=description,
+        )
+
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO expenses (user_id, amount, category, date, description) VALUES (?, ?, ?, ?, ?)",
+        (user_id, amount_value, category, date, description or None),
+    )
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("profile"))
+
+
 @app.route("/terms")
 def terms():
     return render_template("terms.html")
@@ -130,16 +293,6 @@ def privacy():
 # ------------------------------------------------------------------ #
 # Placeholder routes — students will implement these                  #
 # ------------------------------------------------------------------ #
-
-@app.route("/profile")
-def profile():
-    return "Profile page — coming in Step 4"
-
-
-@app.route("/expenses/add")
-def add_expense():
-    return "Add expense — coming in Step 7"
-
 
 @app.route("/expenses/<int:id>/edit")
 def edit_expense(id):
