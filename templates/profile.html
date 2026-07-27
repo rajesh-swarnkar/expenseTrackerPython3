@@ -17,6 +17,23 @@
             <a href="{{ url_for('add_expense') }}" class="btn-primary profile-add-btn">+ Add expense</a>
         </div>
 
+        <form method="GET" action="{{ url_for('profile') }}" class="profile-filter-bar">
+            <select name="range" class="form-input filter-select" onchange="this.form.submit()">
+                <option value="all" {% if filter.range == 'all' %}selected{% endif %}>All time</option>
+                <option value="this_month" {% if filter.range == 'this_month' %}selected{% endif %}>This month</option>
+                <option value="last_30" {% if filter.range == 'last_30' %}selected{% endif %}>Last 30 days</option>
+                <option value="last_90" {% if filter.range == 'last_90' %}selected{% endif %}>Last 90 days</option>
+                <option value="this_year" {% if filter.range == 'this_year' %}selected{% endif %}>This year</option>
+            </select>
+            <span class="filter-divider">or custom range</span>
+            <input type="date" name="start" class="form-input filter-date" value="{{ filter.start_input }}">
+            <input type="date" name="end" class="form-input filter-date" value="{{ filter.end_input }}">
+            <button type="submit" class="btn-ghost filter-apply">Apply</button>
+            {% if filter.range != 'all' %}
+            <a href="{{ url_for('profile') }}" class="filter-clear">Clear</a>
+            {% endif %}
+        </form>
+
         <div class="profile-stats">
             <div class="profile-stat">
                 <span class="profile-stat-label"><i data-lucide="wallet"></i> Total spent</span>

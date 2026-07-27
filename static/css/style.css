@@ -604,6 +604,35 @@ a { color: inherit; text-decoration: none; }
 
 .profile-since svg { width: 14px; height: 14px; }
 
+.profile-filter-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-bottom: 1.5rem;
+}
+
+.filter-select,
+.filter-date {
+    width: auto;
+}
+
+.filter-divider {
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+}
+
+.filter-apply {
+    width: auto;
+    padding: 0.6rem 1rem;
+}
+
+.filter-clear {
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+    text-decoration: underline;
+}
+
 .profile-stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -903,6 +932,7 @@ th.txn-amount { color: var(--ink-faint); font-weight: 600; }
     .features-inner { grid-template-columns: 1fr; }
     .profile-stats { grid-template-columns: 1fr; }
     .profile-columns { grid-template-columns: 1fr; }
+    .profile-filter-bar { flex-direction: column; align-items: stretch; }
 }
 
 @media (max-width: 600px) {

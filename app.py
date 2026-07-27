@@ -1,5 +1,5 @@
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import Flask, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -33,6 +33,43 @@ def get_initials(name):
     if len(parts) == 1:
         return parts[0][:2].upper()
     return (parts[0][0] + parts[-1][0]).upper()
+
+
+def resolve_date_range(range_key, start, end):
+    today = datetime.now().date()
+
+    if start and end:
+        try:
+            start_date = datetime.strptime(start, "%Y-%m-%d").date()
+            end_date = datetime.strptime(end, "%Y-%m-%d").date()
+        except ValueError:
+            return {"start": None, "end": None, "range": "all", "start_input": "", "end_input": ""}
+        if start_date > end_date:
+            return {"start": None, "end": None, "range": "all", "start_input": "", "end_input": ""}
+        return {
+            "start": start_date.isoformat(),
+            "end": end_date.isoformat(),
+            "range": "custom",
+            "start_input": start,
+            "end_input": end,
+        }
+
+    presets = {
+        "this_month": today.replace(day=1),
+        "last_30": today - timedelta(days=29),
+        "last_90": today - timedelta(days=89),
+        "this_year": today.replace(month=1, day=1),
+    }
+    if range_key in presets:
+        return {
+            "start": presets[range_key].isoformat(),
+            "end": today.isoformat(),
+            "range": range_key,
+            "start_input": "",
+            "end_input": "",
+        }
+
+    return {"start": None, "end": None, "range": "all", "start_input": "", "end_input": ""}
 
 
 # ------------------------------------------------------------------ #
@@ -155,33 +192,46 @@ def profile():
         session.clear()
         return redirect(url_for("login"))
 
+    date_filter = resolve_date_range(
+        request.args.get("range", "all"),
+        request.args.get("start"),
+        request.args.get("end"),
+    )
+
+    where_clause = "user_id = ?"
+    params = [user_id]
+    if date_filter["start"] and date_filter["end"]:
+        where_clause += " AND date BETWEEN ? AND ?"
+        params.extend([date_filter["start"], date_filter["end"]])
+    params = tuple(params)
+
     totals = conn.execute(
-        "SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS count FROM expenses WHERE user_id = ?",
-        (user_id,),
+        f"SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS count FROM expenses WHERE {where_clause}",
+        params,
     ).fetchone()
     total_spent = totals["total"]
     transaction_count = totals["count"]
 
     category_totals = conn.execute(
-        """
+        f"""
         SELECT category, SUM(amount) AS total
         FROM expenses
-        WHERE user_id = ?
+        WHERE {where_clause}
         GROUP BY category
         ORDER BY total DESC
         """,
-        (user_id,),
+        params,
     ).fetchall()
 
     recent = conn.execute(
-        """
+        f"""
         SELECT date, description, category, amount
         FROM expenses
-        WHERE user_id = ?
+        WHERE {where_clause}
         ORDER BY date DESC, id DESC
         LIMIT 5
         """,
-        (user_id,),
+        params,
     ).fetchall()
     conn.close()
 
@@ -223,6 +273,7 @@ def profile():
         stats=stats,
         categories=categories,
         transactions=transactions,
+        filter=date_filter,
     )
 
 

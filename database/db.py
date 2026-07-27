@@ -58,7 +58,7 @@ def seed_db():
         "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
         ("Demo User", "demo@spendly.com", generate_password_hash("demo123")),
     )
-    user_id = 6
+    user_id = cursor.lastrowid
 
     sample_expenses = [
         (user_id, 250.00, "Food", "2026-07-02", "Groceries"),
