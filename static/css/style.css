@@ -18,6 +18,8 @@
     --danger-light: #fdecea;
     --border: #e4e1da;
     --border-soft: #eeebe4;
+    --info: #0369a1;
+    --info-light: #e0f2fe;
 
     --cat-food: var(--accent);
     --cat-food-light: var(--accent-light);
@@ -117,6 +119,7 @@ a { color: inherit; text-decoration: none; }
 
 .nav-links a { color: var(--ink-muted); transition: color 0.2s; }
 .nav-links a:hover { color: var(--ink); }
+.nav-links a.active { color: var(--accent); font-weight: 600; }
 
 .nav-user { color: var(--ink); font-weight: 600; }
 
@@ -919,6 +922,118 @@ th.txn-amount { color: var(--ink-faint); font-weight: 600; }
     width: 100%;
     height: 100%;
     border: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Analytics (coming soon)                                             */
+/* ------------------------------------------------------------------ */
+
+.analytics-section {
+    position: relative;
+    min-height: calc(100vh - 60px - 100px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 3rem 2rem;
+}
+
+.analytics-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 400px;
+    height: 400px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.coming-soon-card {
+    position: relative;
+    z-index: 1;
+    background: var(--paper-card);
+    border-radius: 24px;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.75rem;
+    box-shadow: 0 16px 24px rgba(0,0,0,0.03);
+}
+
+.coming-soon-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 6px rgba(26,71,42,0.13);
+}
+
+.coming-soon-icon svg { width: 24px; height: 24px; color: #fff; }
+
+.coming-soon-badge {
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.69rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.375rem 0.75rem;
+    border-radius: 20px;
+}
+
+.coming-soon-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    text-align: center;
+}
+
+.coming-soon-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    line-height: 2rem;
+    color: var(--ink);
+}
+
+.coming-soon-desc-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.coming-soon-desc {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: var(--ink-muted);
+}
+
+.coming-soon-highlight {
+    display: inline-block;
+    background: var(--info-light);
+    color: var(--info);
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.25rem 0.625rem;
+    border-radius: 6px;
+}
+
+.coming-soon-dots { width: 44px; height: 8px; }
+
+.coming-soon-footer {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--ink-faint);
 }
 
 /* ------------------------------------------------------------------ */

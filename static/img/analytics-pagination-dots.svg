@@ -1,0 +1,7 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="44" height="8" viewBox="0 0 44 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="pagination-dots">
+<circle id="dot-left" cx="3" cy="4" r="3" fill="#E5E7EB"/>
+<rect id="dot-middle-active" x="14" y="1" width="16" height="6" rx="3" fill="#1B4332"/>
+<circle id="dot-right" cx="41" cy="4" r="3" fill="#E5E7EB"/>
+</g>
+</svg>
