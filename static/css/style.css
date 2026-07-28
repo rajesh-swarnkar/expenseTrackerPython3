@@ -719,6 +719,11 @@ a { color: inherit; text-decoration: none; }
 .txn-amount { text-align: right; font-weight: 600; color: var(--ink); }
 th.txn-amount { color: var(--ink-faint); font-weight: 600; }
 
+.txn-actions { text-align: right; width: 2rem; }
+.txn-edit-link { color: var(--ink-faint); display: inline-flex; }
+.txn-edit-link:hover { color: var(--accent); }
+.txn-edit-link i { width: 16px; height: 16px; }
+
 /* Category badges */
 
 .badge {

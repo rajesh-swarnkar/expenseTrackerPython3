@@ -225,7 +225,7 @@ def profile():
 
     recent = conn.execute(
         f"""
-        SELECT date, description, category, amount
+        SELECT id, date, description, category, amount
         FROM expenses
         WHERE {where_clause}
         ORDER BY date DESC, id DESC
@@ -259,6 +259,7 @@ def profile():
 
     transactions = [
         {
+            "id": row["id"],
             "date": row["date"],
             "description": row["description"] or "—",
             "category": row["category"],
@@ -352,9 +353,77 @@ def privacy():
 # Placeholder routes — students will implement these                  #
 # ------------------------------------------------------------------ #
 
-@app.route("/expenses/<int:id>/edit")
+@app.route("/expenses/<int:id>/edit", methods=["GET", "POST"])
 def edit_expense(id):
-    return "Edit expense — coming in Step 8"
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("login"))
+
+    conn = get_db()
+    expense = conn.execute(
+        "SELECT id, amount, category, date, description FROM expenses WHERE id = ? AND user_id = ?",
+        (id, user_id),
+    ).fetchone()
+    conn.close()
+
+    if not expense:
+        return redirect(url_for("profile"))
+
+    if request.method == "GET":
+        return render_template(
+            "edit_expense.html",
+            categories=CATEGORIES,
+            expense_id=id,
+            amount=f"{expense['amount']:.2f}",
+            category=expense["category"],
+            date=expense["date"],
+            description=expense["description"],
+        )
+
+    amount = request.form.get("amount", "").strip()
+    category = request.form.get("category", "").strip()
+    date = request.form.get("date", "").strip()
+    description = request.form.get("description", "").strip()
+
+    error = None
+    amount_value = None
+    try:
+        amount_value = float(amount)
+        if amount_value <= 0:
+            raise ValueError
+    except ValueError:
+        error = "Enter a valid amount greater than zero."
+
+    if not error and category not in CATEGORIES:
+        error = "Select a valid category."
+
+    if not error:
+        try:
+            datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            error = "Enter a valid date."
+
+    if error:
+        return render_template(
+            "edit_expense.html",
+            categories=CATEGORIES,
+            expense_id=id,
+            error=error,
+            amount=amount,
+            category=category,
+            date=date,
+            description=description,
+        )
+
+    conn = get_db()
+    conn.execute(
+        "UPDATE expenses SET amount = ?, category = ?, date = ?, description = ? WHERE id = ? AND user_id = ?",
+        (amount_value, category, date, description or None, id, user_id),
+    )
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("profile"))
 
 
 @app.route("/expenses/<int:id>/delete")
